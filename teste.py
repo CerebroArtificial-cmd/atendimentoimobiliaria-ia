@@ -1,11 +1,7 @@
-cript auxiliar para executar o app Streamlit com checagens básicas.
+este mínimo para iniciar o app Streamlit sem checagens extras.
 
 Uso:
-  python teste.py [--port 8501] [--headless]
-
-Exemplos:
-  python teste.py
-  python teste.py --port 8502 --headless
+  python teste_minimo.py [--port 8501] [--headless]
 """
 
 from __future__ import annotations
@@ -14,50 +10,22 @@ import argparse
 import shutil
 import subprocess
 import sys
-from pathlib import Path
-
-
-def _check_prereqs() -> list[str]:
-    problemas: list[str] = []
-
-    if not Path("aplicativo_imobiliaria.py").exists():
-        problemas.append("Arquivo 'aplicativo_imobiliaria.py' não encontrado na pasta atual.")
-
-    # Verifica se Streamlit está instalado
-    if shutil.which("streamlit") is None:
-        # Tenta ao menos importar pelo módulo
-        try:
-            __import__("streamlit")
-        except Exception:
-            problemas.append(
-                "Pacote 'streamlit' não está instalado. Rode: pip install -r requirements.txt"
-            )
-
-    # Aviso sobre secrets (opcional)
-    secrets_path = Path(".streamlit/secrets.toml")
-    if not secrets_path.exists():
-        # Apenas aviso; o app pode rodar sem OpenAI/Sheets
-        problemas.append(
-            "Aviso: '.streamlit/secrets.toml' não encontrado. Recursos opcionais (OpenAI/Sheets) podem ficar inativos."
-        )
-
-    return problemas
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(add_help=True)
     parser.add_argument("--port", type=int, default=8501, help="Porta do servidor Streamlit")
-    parser.add_argument(
-        "--headless", action="store_true", help="Executa em modo headless (não abre navegador)"
-    )
-    args, unknown = parser.parse_known_args()
+    parser.add_argument("--headless", action="store_true", help="Executa sem abrir o navegador")
+    args = parser.parse_args()
 
-    problemas = _check_prereqs()
-    for p in problemas:
-        # Imprime cada problema/aviso em sua própria linha
-        print(f"[verificação] {p}")
+    # Verifica rapidamente se o Streamlit está disponível
+    if shutil.which("streamlit") is None:
+        try:
+            __import__("streamlit")
+        except Exception:
+            print("Streamlit não encontrado. Instale com: pip install -r requirements.txt")
+            return 1
 
-    # Monta o comando do Streamlit via módulo para portabilidade
     cmd = [
         sys.executable,
         "-m",
@@ -70,11 +38,7 @@ def main() -> int:
     if args.headless:
         cmd += ["--server.headless", "true"]
 
-    # Encaminha argumentos extras desconhecidos diretamente ao Streamlit
-    if unknown:
-        cmd += unknown
-
-    print("[execução] ", " ".join(cmd))
+    print("Executando:", " ".join(cmd))
     try:
         return subprocess.call(cmd)
     except KeyboardInterrupt:
@@ -83,5 +47,7 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+
 
 
